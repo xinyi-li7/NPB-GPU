@@ -20,7 +20,7 @@
 #---------------------------------------------------------------------------
 # This is the compiler used for CUDA programs
 #---------------------------------------------------------------------------
-COMPUTE_CAPABILITY = -gencode arch=compute_61,code=sm_61
+COMPUTE_CAPABILITY = -gencode arch=compute_70,code=sm_70
 
 OPENMP = -Xcompiler -fopenmp -lgomp
 
@@ -28,7 +28,8 @@ REGISTERS =
 
 ####-maxrregcount 50
 
-OPTIMIZATIONS = -use_fast_math -Xptxas --preserve-relocs -Xptxas -O3
+#OPTIMIZATIONS = -use_fast_math -Xptxas --preserve-relocs -Xptxas -O3
+OPTIMIZATIONS = 
 
 CPP_14 = -std=c++14
 
@@ -81,6 +82,7 @@ UCC	= cc
 # Destination of executables, relative to subdirs of the main directory. 
 #---------------------------------------------------------------------------
 BINDIR	= ../bin
+#BINDIR	= ../bin_opt
 
 #---------------------------------------------------------------------------
 # The variable RAND controls which random number generator 
