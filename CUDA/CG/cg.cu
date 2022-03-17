@@ -92,6 +92,7 @@
 #define PROFILING_KERNEL_NINE (9)
 #define PROFILING_KERNEL_TEN (10)
 #define PROFILING_KERNEL_ELEVEN (11)
+//#define PROFILING
 
 /* global variables */
 #if defined(DO_NOT_ALLOCATE_ARRAYS_WITH_DYNAMIC_MEMORY_AND_AS_SINGLE_DIMENSION)
@@ -332,6 +333,15 @@ static void vecset(int n,
 		int* nzv,
 		int i,
 		double val);
+void checkCUDAError(const char *msg)
+{
+    cudaError_t err = cudaGetLastError();
+    if( cudaSuccess != err)
+    {
+        fprintf(stderr, "Cuda error: %s: %s.\n", msg, cudaGetErrorString( err) );
+        exit(EXIT_FAILURE);
+    }
+}
 
 /* cg */
 int main(int argc, char** argv){
@@ -509,6 +519,7 @@ int main(int argc, char** argv){
 		 * so, first: (z.z)
 		 * --------------------------------------------------------------------
 		 */
+		// printf("norm_temp1=%lf,norm_temp2=%lf",norm_temp1, norm_temp2);
 		gpu_kernel_ten(&norm_temp1, &norm_temp2);
 		norm_temp2 = 1.0 / sqrt(norm_temp2);
 		zeta = SHIFT + 1.0 / norm_temp1;
@@ -1181,12 +1192,14 @@ __global__ void gpu_kernel_nine(double r[], double x[], double* sum, double glob
 
 static void gpu_kernel_ten(double* norm_temp1, 
 		double* norm_temp2){
+//printf("norm_temp1=%lf,norm_temp2=%lf\n",*norm_temp1, *norm_temp2);
 #if defined(PROFILING)
 	timer_start(PROFILING_KERNEL_TEN);
 #endif
 	gpu_kernel_ten_1<<<blocks_per_grid_on_kernel_ten,threads_per_block_on_kernel_ten,size_shared_data_on_kernel_ten>>>(global_data_device,x_device,z_device);
+	checkCUDAError("kernel launch failure");
 	gpu_kernel_ten_2<<<blocks_per_grid_on_kernel_ten,threads_per_block_on_kernel_ten,size_shared_data_on_kernel_ten>>>(global_data_two_device,x_device,z_device);
-
+	checkCUDAError("kernel launch failure");
 	global_data_reduce=0.0; 
 	global_data_two_reduce=0.0; 
 	cudaMemcpy(global_data, global_data_device, size_reduce_memory_on_kernel_ten, cudaMemcpyDeviceToHost);
@@ -1203,6 +1216,7 @@ static void gpu_kernel_ten(double* norm_temp1,
 __global__ void gpu_kernel_ten_1(double* norm_temp, 
 		double x[], 
 		double z[]){
+	//printf("norm_temp1=%lf\n",*norm_temp);
 	double* share_data = (double*)extern_share_data;	  
 
 	int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
@@ -1225,6 +1239,8 @@ __global__ void gpu_kernel_ten_1(double* norm_temp,
 __global__ void gpu_kernel_ten_2(double* norm_temp, 
 		double x[], 
 		double z[]){
+	//printf("norm_temp2=%lf\n",*norm_temp);
+
 	double* share_data = (double*)extern_share_data;
 
 	int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
